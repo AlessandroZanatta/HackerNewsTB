@@ -2,7 +2,9 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
+const fs = require('fs');
 
+const users = require('./users');
 const providers = require('./providers');
 
 /* -------------------------------------------------------------------------------- */
@@ -15,32 +17,71 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
 
+// Used to keep track of users who started a chat with the bot
+const USERS_FILE = 'data/users.json';
+const USER_TRACKER = new users.UsersTracker(USERS_FILE);
+
 // List of news providers
-const HACKER_NEWS = new providers.HackerNewsProvider();
-const DAILY_SWIG = new providers.PortSwiggerProvider()
+const HACKER_NEWS         = new providers.HackerNewsProvider();
+
+const DAILY_SWIG          = new providers.RSSProvider('The Daily Swig'      , 'https://portswigger.net/daily-swig/rss');
+const LATEST_HACKING_NEWS = new providers.RSSProvider('Latest Hacking News' , 'https://latesthackingnews.com/feed');
+const THE_HACKER_NEWS     = new providers.RSSProvider('The Hacker News'     , 'https://feeds.feedburner.com/TheHackersNews');
+const WE_LIVE_SECURITY    = new providers.RSSProvider('We Live Security'    , 'https://welivesecurity.com/feed');
+const HACKER_ONE          = new providers.RSSProvider('HackerOne'           , 'https://hackerone.com/blog.rss');
+const REDDIT              = new providers.RSSProvider('Reddit'              , 'https://www.reddit.com/r/hacking/.rss?format=xml')
 
 const PROVIDERS = [
-    HACKER_NEWS,
+    // HACKER_NEWS,
     DAILY_SWIG,
-]
+    LATEST_HACKING_NEWS,
+    THE_HACKER_NEWS,
+    WE_LIVE_SECURITY,
+    HACKER_ONE,
+    REDDIT,
+]   
 
 // Schedule providers update at midnight
 PROVIDERS.forEach(provider => {
     console.log(`[BOT] Scheduling update of ${provider.getProviderName()}`)
-    schedule.scheduleJob('0 0 0 * *', provider.updateNews());
+    schedule.scheduleJob('0 0 * * *', provider.updateNews());
 });
 
-// Schedule blacklist cleanup at the end of each month
-PROVIDERS.forEach(provider => {
-    console.log(`[BOT] Scheduling deletion of blacklist for ${provider.getProviderName()}`)
-    schedule.scheduleJob('0 0 0 1 *', provider.cleanBlacklist());
-});
+// Schedule blacklist cleanup every six month
+// PROVIDERS.forEach(provider => {
+//     console.log(`[BOT] Scheduling deletion of blacklist for ${provider.getProviderName()}`)
+//     schedule.scheduleJob('0 0 0 */6 *', provider.cleanBlacklist());
+// });
 
-let USERS_WHITELIST = ['AlessandroZanattaK'];
+let USERS_WHITELIST = ['k41ex'];
 
 /* -------------------------------------------------------------------------------- */
 /* --------------------------------- Bot callbacks -------------------------------- */
 /* -------------------------------------------------------------------------------- */
+
+// Keep the list of subscribed users!
+bot.onText(/\/start/, (msg, _) => {
+
+    const chatId = msg.chat.id;
+    console.log(`[BOT] New user: ${chatId}`);
+
+    let username = '';
+
+    if(msg.chat.username !== undefined){
+        username = ` ${msg.chat.username}`;
+    }
+    
+    const welcomeMessage = `Welcome${username}!
+    
+You will be receiving news three times a day!
+It will be at about breakfast, launch and dinner time!`;
+
+    console.log("Hi");
+    USER_TRACKER.addUser(chatId); // should never fail
+    console.log("DUDE");
+
+    bot.sendMessage(chatId, welcomeMessage);    
+});
 
 // Send help on "/help"
 bot.onText(/\/help/, (msg, match) => {
@@ -52,55 +93,54 @@ bot.onText(/\/help/, (msg, match) => {
     const chatId = msg.chat.id;
 
     const helpMessage = `
-    I can help you staying up to date with tech news!
+    I can help you staying up-to-date with hacking/tech news!
     
 Here are the commands to control me:
 
 
-    /help                        Show this help
-    /hackernews [new|top|best]   Get a random news from HackerNews
-    /swig                        Get list of news from PortSwigger's Daily Swig
+    /help           Show this help
+    /news (on|off)  Turn on/off news
     `;
-    console.log('hey3');
 
     bot.sendMessage(chatId, helpMessage);
 });
 
-// Send a new news on "/news"
-bot.onText(/\/hackernews(.*)/, (msg, match) => {
-
-    if(!acceptedRequest(msg, match)){
-        return;
-    }
-
+bot.onText(/\/news (on|off)/, (msg, match) => {
+    
+    const choice = match[1];
     const chatId = msg.chat.id;
 
-    const requestedType = match[1];
-
-    let chosenType = providers.NEWS_TYPES.new;
-    
-    if(requestedType.length > 0 && providers.NEWS_TYPES.isDefined(requestedType.substring(1))){
-        chosenType = providers.NEWS_TYPES.get(requestedType);
+    if (choice === 'on'){
+        if(USER_TRACKER.addUser(chatId)){
+            bot.sendMessage(chatId, 'Subscribed to news!');
+        } else {
+            bot.sendMessage(chatId, 'You\'re already subscribed!');
+        }
+    } else if (choice === 'off'){
+        USER_TRACKER.removeUser(chatId);
+        bot.sendMessage(chatId, 'Unsubscribed from daily news... :(');
     }
 
-    HACKER_NEWS.getNews(chosenType, url => {
-        bot.sendMessage(chatId, url);
+    // If you end down there, there's something awfully wrong...
+})
+
+// Schedule sending of messages at given hours
+
+const BREAKFAST_HOUR = 8;
+const LAUNCH_HOUR = 8;
+const DINNER_HOUR = 8;
+
+let rule = new schedule.RecurrenceRule();
+rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
+
+schedule.scheduleJob('* * * * *', async function(){
+    const news = await getFormattedNews();
+    
+    // Send news to all subscribed users
+    USER_TRACKER.listUsers().forEach(userId => {
+        bot.sendMessage(userId, news, {'parse_mode': 'MarkdownV2'});
     });
 });
-
-bot.onText(/\/swig/, (msg, match) => {
-
-    if(!acceptedRequest(msg, match)){
-        return;
-    }
-
-    const chatId = msg.chat.id;
-
-    DAILY_SWIG.getNews(msg => {
-        bot.sendMessage(chatId, msg, {parse_mode : "MarkdownV2"});
-    })
-});
-
 
 /* -------------------------------------------------------------------------------- */
 /* ---------------------------------- Functions ----------------------------------- */
@@ -122,4 +162,26 @@ function acceptedRequest(msg, calledOn){
     }
     
     return true;
+}
+
+function markdownEscape(string){
+    return string.replace(/\_|\*|\[|\]|\(|\)|\~|\`|\>|\#|\+|\-|\=|\||\{|\}|\.|\!/gi, x => {
+        return `\\${x}`;
+    });
+}
+
+async function getFormattedNews(){
+
+    var message = 'Here\'s the latest news:\n\n';
+
+    for(let i = 0; i < PROVIDERS.length; i++){
+        let provider = PROVIDERS[i];
+        let news = await providers.getNewsWrapper(provider);
+
+        if(news !== null){
+            message += `${provider.getProviderName()}: [${markdownEscape(news.news.title)}](${markdownEscape(news.news.link)})\n\n`;
+        }
+    }
+
+    return message;
 }
