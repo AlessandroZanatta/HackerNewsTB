@@ -125,8 +125,8 @@ bot.onText(/\/news (on|off)/, (msg, match) => {
 // Schedule sending of messages at given hours
 
 const BREAKFAST_HOUR = 8;
-const LAUNCH_HOUR = 8;
-const DINNER_HOUR = 8;
+const LAUNCH_HOUR = 14;
+const DINNER_HOUR = 21;
 
 let rule = new schedule.RecurrenceRule();
 rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
