@@ -3,4 +3,8 @@ version: '3'
 services:
   hackernews-telegram-bot:
     build: .
-  volume: data-volume:/usr/src/app/data
+    volumes:
+        - data-volume:/usr/src/app/data
+
+volumes:
+  data-volume:

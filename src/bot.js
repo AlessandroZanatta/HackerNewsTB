@@ -76,9 +76,7 @@ bot.onText(/\/start/, (msg, _) => {
 You will be receiving news three times a day!
 It will be at about breakfast, launch and dinner time!`;
 
-    console.log("Hi");
-    USER_TRACKER.addUser(chatId); // should never fail
-    console.log("DUDE");
+    USER_TRACKER.addUser(chatId);
 
     bot.sendMessage(chatId, welcomeMessage);    
 });
@@ -133,7 +131,7 @@ const DINNER_HOUR = 8;
 let rule = new schedule.RecurrenceRule();
 rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
 
-schedule.scheduleJob('* * * * *', async function(){
+schedule.scheduleJob(rule, async function(){
     const news = await getFormattedNews();
     
     // Send news to all subscribed users
