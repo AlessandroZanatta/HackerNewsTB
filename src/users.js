@@ -33,7 +33,7 @@ class UsersTracker{
     removeUser(id){
         const index = this.currentUsers.indexOf(id);
         if (index > -1) {
-            array.splice(index, 1);
+            this.currentUsers.splice(index, 1);
         }
     }
 }
