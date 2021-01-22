@@ -96,8 +96,8 @@ bot.onText(/\/help/, (msg, match) => {
 Here are the commands to control me:
 
 
-    /help           Show this help
-    /news (on|off)  Turn on/off news
+    /help              Show this help
+    /news (on|off)     Turn on/off news
     `;
 
     bot.sendMessage(chatId, helpMessage);
@@ -130,6 +130,7 @@ const DINNER_HOUR = 21;
 
 let rule = new schedule.RecurrenceRule();
 rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
+rule.minute = 0;
 
 schedule.scheduleJob(rule, async function(){
     const news = await getFormattedNews();
