@@ -90,11 +90,7 @@ It will be at about breakfast, launch and dinner time!`;
 
 // Send help on "/help"
 bot.onText(/\/help/, (msg, match) => {
-
-    if(!acceptedRequest(msg, match)){
-        return;
-    }
-
+    
     const chatId = msg.chat.id;
 
     const helpMessage = `
