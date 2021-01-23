@@ -1,8 +1,8 @@
 const fs = require('fs');
 const debug = require('debug');
 
-const logger = debug('LOG    User Tracker');
-const error = debug('ERROR    User Tracker');
+const logger = debug('LOG    User Tracker: ');
+const error = debug('ERROR    User Tracker: ');
 
 // set this namespace to log via console.log
 logger.log = console.log.bind(console);

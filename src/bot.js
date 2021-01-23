@@ -12,8 +12,8 @@ const providers = require('./providers');
 /* -------------------------------------------------------------------------------- */
 
 // Setup logger
-const logger = debug('LOG    Bot');
-const error = debug('ERROR    Bot');
+const logger = debug('LOG    Bot: ');
+const error = debug('ERROR    Bot: ');
 
 // set this namespace to log via console.log
 logger.log = console.log.bind(console);
@@ -90,7 +90,7 @@ It will be at about breakfast, launch and dinner time!`;
 
 // Send help on "/help"
 bot.onText(/\/help/, (msg, match) => {
-    
+
     const chatId = msg.chat.id;
 
     const helpMessage = `

@@ -27,8 +27,8 @@ class Provider {
         this.providerDir = `${NEWS_DIR}/${this.providerName}`;
         this.blacklistFile = `${this.providerDir}/blacklist.json`;
 
-        this.logger = debug(`LOG    ${providerName}`);
-        this.error = debug(`ERROR    ${providerName}`)
+        this.logger = debug(`LOG    ${providerName}: `);
+        this.error = debug(`ERROR    ${providerName}: `)
 
         // Send log to stdout instead of stderr
         this.logger.log = console.log.bind(console);
