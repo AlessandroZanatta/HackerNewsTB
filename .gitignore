@@ -1,5 +1,9 @@
 # Dependency directories
 node_modules/
 
-# dotenv environment variables file
+# doten v environment variables file
 .env
+
+# Directories created at runtime
+news_data
+data

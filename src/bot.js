@@ -2,7 +2,7 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
-const fs = require('fs');
+const debug = require('debug');
 
 const users = require('./users');
 const providers = require('./providers');
@@ -10,6 +10,13 @@ const providers = require('./providers');
 /* -------------------------------------------------------------------------------- */
 /* --------------------- Bot configuration and global variables ------------------- */
 /* -------------------------------------------------------------------------------- */
+
+// Setup logger
+const logger = debug('LOG    Bot');
+const error = debug('ERROR    Bot');
+
+// set this namespace to log via console.log
+logger.log = console.log.bind(console);
 
 // Bot Token from environment
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -43,13 +50,13 @@ const PROVIDERS = [
 
 // Schedule providers update at midnight
 PROVIDERS.forEach(provider => {
-    console.log(`[BOT] Scheduling update of ${provider.getProviderName()}`)
+    logger(`Scheduling update of ${provider.getProviderName()}`)
     schedule.scheduleJob('0 0 * * *', provider.updateNews());
 });
 
 // Schedule blacklist cleanup every six month
 // PROVIDERS.forEach(provider => {
-//     console.log(`[BOT] Scheduling deletion of blacklist for ${provider.getProviderName()}`)
+//     logger(`Scheduling deletion of blacklist for ${provider.getProviderName()}`)
 //     schedule.scheduleJob('0 0 0 */6 *', provider.cleanBlacklist());
 // });
 
@@ -63,7 +70,7 @@ let USERS_WHITELIST = ['k41ex'];
 bot.onText(/\/start/, (msg, _) => {
 
     const chatId = msg.chat.id;
-    console.log(`[BOT] New user: ${chatId}`);
+    logger(`New user: ${chatId}`);
 
     let username = '';
 
@@ -110,12 +117,14 @@ bot.onText(/\/news (on|off)/, (msg, match) => {
 
     if (choice === 'on'){
         if(USER_TRACKER.addUser(chatId)){
+            logger(`Added user ${chatId} to news list!`);
             bot.sendMessage(chatId, 'Subscribed to news!');
         } else {
             bot.sendMessage(chatId, 'You\'re already subscribed!');
         }
     } else if (choice === 'off'){
         USER_TRACKER.removeUser(chatId);
+        logger(`Removed user ${chatId} from news list!`);
         bot.sendMessage(chatId, 'Unsubscribed from daily news... :(');
     }
 
@@ -124,22 +133,33 @@ bot.onText(/\/news (on|off)/, (msg, match) => {
 
 // Schedule sending of messages at given hours
 
-const BREAKFAST_HOUR = 8;
-const LAUNCH_HOUR = 14;
-const DINNER_HOUR = 21;
+// Since it uses UTC and in Italy we shift between UTC+1 and UTC+2
+const UTC_CORRECTION = -1; // TODO
+
+const BREAKFAST_HOUR = 8 + UTC_CORRECTION;
+const LAUNCH_HOUR = 14 + UTC_CORRECTION;
+const DINNER_HOUR = 21 + UTC_CORRECTION;
 
 let rule = new schedule.RecurrenceRule();
 rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
 rule.minute = 0;
 
 schedule.scheduleJob(rule, async function(){
+
+    logger(`Collecting news...`);
+
     const news = await getFormattedNews();
+    logger(`Sending news...`);
     
     // Send news to all subscribed users
     USER_TRACKER.listUsers().forEach(userId => {
         bot.sendMessage(userId, news, {'parse_mode': 'MarkdownV2'});
+        logger(`    Sent to ${userId}`);
     });
+    
+    logger(`Sent to everybody!`);
 });
+
 
 /* -------------------------------------------------------------------------------- */
 /* ---------------------------------- Functions ----------------------------------- */
@@ -153,10 +173,10 @@ function isWhitelisted(username){
 function acceptedRequest(msg, calledOn){
     const username = msg.chat.username;
 
-    console.log(`[BOT] ${username} --> ${calledOn[0]} `);
+    logger(`${username} --> ${calledOn[0]} `);
 
     if(!isWhitelisted(username)){
-        console.log('    User is not in whitelist, dropping request...')
+        error(`User ${username} is not in whitelist, dropping request...`)
         return false;
     }
     

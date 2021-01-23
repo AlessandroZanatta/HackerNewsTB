@@ -1,4 +1,11 @@
 const fs = require('fs');
+const debug = require('debug');
+
+const logger = debug('LOG    User Tracker');
+const error = debug('ERROR    User Tracker');
+
+// set this namespace to log via console.log
+logger.log = console.log.bind(console);
 
 class UsersTracker{
 
@@ -17,7 +24,7 @@ class UsersTracker{
             this.currentUsers.push(id);
             fs.writeFile(this.usersFile, JSON.stringify(this.currentUsers), 'utf8', err => {
                 if(err){
-                    console.log(`[UsersTracker] Error: ${err}`)
+                    error(`${err}`)
                 }
             });
             return true;

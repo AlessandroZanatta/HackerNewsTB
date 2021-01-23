@@ -1,9 +1,7 @@
-var request = require('then-request');
-const Enum = require('enum');
+const request = require('then-request');
 const fs = require('fs');
-const random = require('random');
-let Parser = require('rss-parser');
-var escape = require('markdown-escape')
+const Parser = require('rss-parser');
+const debug = require('debug');
 
 // The directory containing the news
 const NEWS_DIR = 'news_data';
@@ -28,6 +26,12 @@ class Provider {
         this.providerName = providerName;
         this.providerDir = `${NEWS_DIR}/${this.providerName}`;
         this.blacklistFile = `${this.providerDir}/blacklist.json`;
+
+        this.logger = debug(`LOG    ${providerName}`);
+        this.error = debug(`ERROR    ${providerName}`)
+
+        // Send log to stdout instead of stderr
+        this.logger.log = console.log.bind(console);
 
         // Create directory of the provider, if it doesn't exists
         if (!fs.existsSync(this.providerDir)){
@@ -58,13 +62,13 @@ class Provider {
      * Cleans the blacklist, removing everything to avoid consuming too much space.
      */
     cleanBlacklist(){
-        console.log(`[${this.getProviderName()}] Cleaning blacklist...`);
+        this.logger(`Cleaning blacklist...`);
         fs.writeFile(this.blacklistFile, JSON.stringify([]), 'utf8', err => {
             if(err) {
-                console.log(`    ${err}`);
+                this.error(err);
             }
         });
-        console.log('    Done!')
+        this.logger(`Done!`);
     }
 
 
@@ -74,7 +78,7 @@ class Provider {
     getBlacklist(callback){
         fs.readFile(this.blacklistFile, 'utf8', (err, data) => {
             if(err){
-                console.log(`    ${err}`)
+                this.error(err)
             } else {
                 callback(JSON.parse(data));
             }
@@ -91,7 +95,7 @@ class Provider {
         currentBlacklist = currentBlacklist.concat(identifiers);
         fs.writeFile(this.blacklistFile, JSON.stringify(currentBlacklist), err => {
             if(err){
-                console.log(err);
+                this.error(err);
             }
         });
     }
@@ -111,23 +115,23 @@ class HackerNewsProvider extends Provider {
     // Retrieve news ids from the HackerNews API
     updateNews(){
 
-        console.log(`[${this.getProviderName()}] Gettings news...`)
+        this.logger(`Gettings news...`)
     
         const url = `https://hacker-news.firebaseio.com/v0/${this.new}`
         
-        console.log(`    Got ${url}`);
+        this.logger(`Got ${url}!`);
         
         request('GET', url).done(res => {
             const data = res.getBody();
             const filename = `${this.providerDir}/${this.new}`;
             fs.writeFile(filename, data, 'utf8', err => {
                 if(err){
-                    console.error('    ' + err);
+                    this.error(err);
                 }
             })
         });
 
-        console.log('    Done!');
+        this.logger(`Done!`);
     }
 
     getNews(callback){
@@ -187,28 +191,28 @@ class RSSProvider extends Provider {
 
     updateNews(){
 
-        console.log(`[${this.getProviderName()}] Starting update...`);
+        this.logger(`Starting update...`);
         
-        // Latest Hacking News do not seem to like bots downloading their feed...
+        // 'Latest Hacking News' do not seem to like bots downloading their feed...
         request('GET', this.rssUrl, {'headers': {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0'}}).done(res => {
             const data = res.getBody();
             fs.writeFile(this.rssFile, data, 'utf8', err => {
                 if(err){
-                    console.log('    ' + err);
+                    this.error(err);
                 }
             })
         });
 
-        console.log('    Done!')
+        this.logger(`Done!`);
     };
 
     getNews(callbackFound, callbackNotFound){
 
-        console.log(`[${this.getProviderName()}] Getting news...`)
+        this.logger(`Getting news...`)
 
         fs.readFile(this.rssFile, 'utf8', (err, data) => {
             if(err){
-                console.log('    ' + err);
+                this.error(err);
             } else {
                 // Async parse of RSS file
                 (async (data) => {
@@ -247,7 +251,7 @@ class RSSProvider extends Provider {
             }
         });
 
-        console.log('    Done!');
+        this.logger(`Done!`);
     };
 }
 
