@@ -22,14 +22,9 @@ class UsersTracker{
     addUser(id){
         if(!this.currentUsers.includes(id)){
             this.currentUsers.push(id);
-            fs.writeFile(this.usersFile, JSON.stringify(this.currentUsers), 'utf8', err => {
-                if(err){
-                    error(`${err}`)
-                }
-            });
+            this.saveToFile();
             return true;
         }
-
         return false;
     }
     
@@ -41,7 +36,16 @@ class UsersTracker{
         const index = this.currentUsers.indexOf(id);
         if (index > -1) {
             this.currentUsers.splice(index, 1);
+            this.saveToFile();
         }
+    }
+
+    saveToFile(){
+        fs.writeFile(this.usersFile, JSON.stringify(this.currentUsers), 'utf8', err => {
+            if(err){
+                error(err);
+            }
+        });
     }
 }
 

@@ -5,6 +5,9 @@ services:
     build: .
     volumes:
         - data-volume:/usr/src/app/data
+    environment:
+        - DEBUG=*
+    command: bash -c "node bot.js 2> /tmp/error.log > /tmp/log.log"
 
 volumes:
   data-volume:
