@@ -4,10 +4,9 @@ services:
   hackernews-telegram-bot:
     build: .
     volumes:
-        - data-volume:/usr/src/app/data
+        - './users_data:/usr/src/app/data'
+        - './logs:/usr/src/app/logs'
+        - './news_data:/usr/src/app/news_data'
     environment:
-        - DEBUG=*
-    command: bash -c "node bot.js 2> /tmp/error.log > /tmp/log.log"
-
-volumes:
-  data-volume:
+        - DEBUG=*-node-telegram-bot-api
+    command: bash -c "node bot.js 2> /usr/src/app/logs/error.log > /usr/src/app/logs/log.log"
