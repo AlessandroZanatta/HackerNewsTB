@@ -4,6 +4,7 @@ node_modules/
 # doten v environment variables file
 .env
 
-# Directories created at runtime
+# Ignore volumes
 news_data
-data
+users_data
+logs
