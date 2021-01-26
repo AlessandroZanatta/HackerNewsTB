@@ -49,16 +49,12 @@ const PROVIDERS = [
 ]   
 
 // Schedule providers update at midnight
-PROVIDERS.forEach(provider => {
-    logger(`Scheduling update of ${provider.getProviderName()}`)
-    schedule.scheduleJob('0 0 * * *', provider.updateNews());
+schedule.scheduleJob('0 */6 * * *', () => {
+    PROVIDERS.forEach(provider => {
+        logger(`Updating ${provider.getProviderName()}`)
+        provider.updateNews();
+    });
 });
-
-// Schedule blacklist cleanup every six month
-// PROVIDERS.forEach(provider => {
-//     logger(`Scheduling deletion of blacklist for ${provider.getProviderName()}`)
-//     schedule.scheduleJob('0 0 0 */6 *', provider.cleanBlacklist());
-// });
 
 let USERS_WHITELIST = ['k41ex'];
 
@@ -133,12 +129,12 @@ bot.onText(/\/news (on|off)/, (msg, match) => {
 const UTC_CORRECTION = -1; // TODO
 
 const BREAKFAST_HOUR = 8 + UTC_CORRECTION;
-const LAUNCH_HOUR = 14 + UTC_CORRECTION;
-const DINNER_HOUR = 21 + UTC_CORRECTION;
+const LAUNCH_HOUR = 13 + UTC_CORRECTION;
+const DINNER_HOUR = 20 + UTC_CORRECTION;
 
 let rule = new schedule.RecurrenceRule();
 rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
-rule.minute = 0;
+rule.minute = 5;
 
 schedule.scheduleJob(rule, async function(){
 
