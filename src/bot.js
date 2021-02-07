@@ -133,13 +133,8 @@ const LAUNCH_HOUR = 13 + UTC_CORRECTION;
 const DINNER_HOUR = 20 + UTC_CORRECTION;
 
 let rule = new schedule.RecurrenceRule();
-<<<<<<< HEAD
 rule.hour = [BREAKFAST_HOUR, DINNER_HOUR];
 rule.minute = 0;
-=======
-rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
-rule.minute = 5;
->>>>>>> b9fc929bc1a3b5167ee3385de5d8b4a3e058470a
 
 schedule.scheduleJob(rule, async function(){
 
