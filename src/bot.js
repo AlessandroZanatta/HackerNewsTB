@@ -137,7 +137,7 @@ const LAUNCH_HOUR = 14 + UTC_CORRECTION;
 const DINNER_HOUR = 21 + UTC_CORRECTION;
 
 let rule = new schedule.RecurrenceRule();
-rule.hour = [BREAKFAST_HOUR, LAUNCH_HOUR, DINNER_HOUR];
+rule.hour = [BREAKFAST_HOUR, DINNER_HOUR];
 rule.minute = 0;
 
 schedule.scheduleJob(rule, async function(){
@@ -180,23 +180,31 @@ function acceptedRequest(msg, calledOn){
 }
 
 function markdownEscape(string){
-    return string.replace(/\_|\*|\[|\]|\(|\)|\~|\`|\>|\#|\+|\-|\=|\||\{|\}|\.|\!/gi, x => {
+    return string.replace(/\_|\*|\[|\]|\(|\)|\~|\`|\>|\#|\+|\-|\=|\||\{|\}|\.\!/gi, x => {
         return `\\${x}`;
     });
 }
 
 async function getFormattedNews(){
 
-    var message = 'Here\'s the latest news:\n\n';
+    let message = 'Here\'s the latest news:\n\n';
+    let found = 0;
 
     for(let i = 0; i < PROVIDERS.length; i++){
         let provider = PROVIDERS[i];
-        let news = await providers.getNewsWrapper(provider);
-
-        if(news !== null){
+        
+        try {
+            let news = await providers.getNewsWrapper(provider);
             message += `${provider.getProviderName()}: [${markdownEscape(news.news.title)}](${markdownEscape(news.news.link)})\n\n`;
+            found++;
+        } catch(err) {
+            // Ignore news that returned an error promise, there simply were no news!
         }
     }
 
-    return message;
+    if (found > 0){ // if we got at least one new news, return it
+        return message;
+    } else {
+        return 'There\'s nothing new... :('
+    }
 }

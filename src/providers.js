@@ -230,6 +230,7 @@ class RSSProvider extends Provider {
 
                         if(notInBlacklist.length === 0){
                             callbackNotFound(null); // if there are no news, return null
+                            this.logger('Nothing new found!');
                             return;
                         }
                         
@@ -246,12 +247,12 @@ class RSSProvider extends Provider {
                                 'link': item.link
                             }
                         });
+                        this.logger('Done!');
                     })
                 })(data);
             }
         });
 
-        this.logger(`Done!`);
     };
 }
 
