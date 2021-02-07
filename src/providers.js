@@ -37,8 +37,6 @@ class Provider {
         if (!fs.existsSync(this.providerDir)){
             fs.mkdirSync(this.providerDir);
         }
-
-        this.cleanBlacklist();
     }
 
     getProviderName(){

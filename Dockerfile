@@ -10,8 +10,4 @@ RUN npm install
 # Copy sources
 COPY src/ ./
 
-# Enable basic debug logs
-ENV DEBUG=*,-node-telegram-bot-api
-
-# Start bot
-CMD [ "node", "bot.js" ]
+# Bot is started by docker-compose.yaml via 'command' directive
