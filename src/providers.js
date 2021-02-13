@@ -197,12 +197,12 @@ class RSSProvider extends Provider {
             fs.writeFile(this.rssFile, data, 'utf8', err => {
                 if(err){
                     this.error(err);
+                } else {
+                    this.logger('Done!')
                 }
             })
         });
-
-        this.logger(`Done!`);
-    };
+    }
 
     getNews(callbackFound, callbackNotFound){
 
@@ -260,7 +260,7 @@ function getNewsWrapper(provider){
         provider.getNews((successResponse) => {
             resolve(successResponse);
         }, (errorResponse) => {
-            reject(errorResponse)
+            reject(errorResponse);
         });
     });
 }

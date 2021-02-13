@@ -49,14 +49,18 @@ const PROVIDERS = [
 ]   
 
 // Schedule providers update at midnight
-schedule.scheduleJob('0 */6 * * *', () => {
+schedule.scheduleJob('0 */6 * * *', updateAllProvidersNews);
+
+let USERS_WHITELIST = ['k41ex'];
+
+function updateAllProvidersNews(){
     PROVIDERS.forEach(provider => {
         logger(`Updating ${provider.getProviderName()}`)
         provider.updateNews();
     });
-});
+}
 
-let USERS_WHITELIST = ['k41ex'];
+updateAllProvidersNews();
 
 /* -------------------------------------------------------------------------------- */
 /* --------------------------------- Bot callbacks -------------------------------- */
